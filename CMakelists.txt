@@ -1,0 +1,42 @@
+cmake_minimum_required(VERSION 3.18)
+project(SDLWindowPrj LANGUAGES C)
+
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
+set(SDL2_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/sdl2/")
+
+find_package(SDL2 MODULE REQUIRED)
+find_package(SDL2_IMAGE MODULE REQUIRED)
+
+file(GLOB SOURCES "src/*.c")
+file(GLOB HEADERS "includes/*.h")
+
+add_executable(SDLWindowPrj ${SOURCES} ${HEADERS})
+target_link_libraries(SDLWindowPrj 
+  ${SDL2_LIBRARY}
+  ${SDL2_IMAGE_LIBRARY}
+) 
+target_include_directories(SDLWindowPrj 
+  PRIVATE 
+    ${SDL2_INCLUDE_DIR}
+    ${SDL2_IMAGE_INCLUDE_DIR} 
+    include
+)
+
+if(WIN32) 
+    set(SDL2_DLL ${CMAKE_CURRENT_SOURCE_DIR}/cmake/sdl2/lib/x64/SDL2.dll)
+    file(GLOB SDL2IMAGE_DLLS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/sdl2_image/lib/x64/*.dll")
+    set(DLL_LIST "${SDL2_DLL}" "${SDL2IMAGE_DLLS}")
+   
+    foreach(EACH_DLL ${DLL_LIST})
+      add_custom_command(TARGET SDLWindowPrj POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${EACH_DLL} $<TARGET_FILE_DIR:SDLWindowPrj>
+      )
+    endforeach()
+endif(WIN32)
+
+# Post build: Copy Resources to bin
+set(ResourcesPath ${CMAKE_CURRENT_SOURCE_DIR}/resources)
+add_custom_command(TARGET SDLWindowPrj POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E cmake_echo_color --cyan "Copy Resources..."
+            COMMAND ${CMAKE_COMMAND} -E copy_directory ${ResourcesPath} $<TARGET_FILE_DIR:SDLWindowPrj>/resources
+)
